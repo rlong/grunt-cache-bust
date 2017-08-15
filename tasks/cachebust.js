@@ -89,25 +89,31 @@ module.exports = function(grunt) {
         grunt.log.ok(files.length + ' file' + (files.length !== 1 ? 's ' : ' ') + 'busted.');
 
         function replaceInFile(filepath) {
-            var markup = grunt.file.read(filepath);
+
+            var originalFilepath = filepath;
+            var markup = grunt.file.read(originalFilepath);
+
+            // swizzle windows paths ...
+            if( -1 !== filepath.indexOf( '\\' ) ) {
+
+                filepath = filepath.replace( /\\/g, "/");
+            }
+
             var baseDir = discoveryOpts.cwd + '/';
             var relativeFileDir = path.dirname(filepath).substr(baseDir.length);
+
             var fileDepth = 0;
 
             if (relativeFileDir !== '') {
                 fileDepth = relativeFileDir.split('/').length;
             }
 
-            // deal with windows paths ...
             var httpPath = filepath.substr(baseDir.length);
-            if( -1 !== httpPath.indexOf( '\\')) {
-                httpPath = httpPath.replace( /\\/g, "/");
-            }
             var baseDirs = httpPath.split('/');
 
             var httpFolder = '';
-            if( -1 !== httpPath.indexOf( '/')  ) {
-                httpFolder = httpPath.substring( 0, 1 + httpPath.indexOf( '/') );
+            if( -1 !== httpPath.lastIndexOf( '/')  ) {
+                httpFolder = httpPath.substring( 0, 1 + httpPath.lastIndexOf( '/') );
             }
 
             _.each(assetMap, function(hashed, original) {
@@ -123,9 +129,10 @@ module.exports = function(grunt) {
                     // grunt.verbose.writeln('httpFolder :', httpFolder  );
                     if( 0 === original.indexOf( httpFolder ) ) {
 
-                        replace.push( [original.substring( httpFolder.length), hashed.substring( httpFolder.length)] )
+                        replace.push( [original.substring( httpFolder.length), hashed.substring( httpFolder.length)] );
                     }
                 }
+                // grunt.verbose.writeln('replace :', replace );
 
                 // find relative paths for shared dirs
                 var originalDirParts = path.dirname(original).split('/');
@@ -152,8 +159,9 @@ module.exports = function(grunt) {
                 });
             });
 
-            grunt.file.write(filepath, markup);
+            grunt.file.write(originalFilepath, markup);
         }
+
 
         function hashFile(obj, file) {
             var absPath = path.resolve(opts.baseDir, file);
