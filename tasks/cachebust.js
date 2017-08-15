@@ -98,7 +98,17 @@ module.exports = function(grunt) {
                 fileDepth = relativeFileDir.split('/').length;
             }
 
-            var baseDirs = filepath.substr(baseDir.length).split('/');
+            // deal with windows paths ...
+            var httpPath = filepath.substr(baseDir.length);
+            if( -1 !== httpPath.indexOf( '\\')) {
+                httpPath = httpPath.replace( /\\/g, "/");
+            }
+            var baseDirs = httpPath.split('/');
+
+            var httpFolder = '';
+            if( -1 !== httpPath.indexOf( '/')  ) {
+                httpFolder = httpPath.substring( 0, 1 + httpPath.indexOf( '/') );
+            }
 
             _.each(assetMap, function(hashed, original) {
                 var replace = [
@@ -107,6 +117,16 @@ module.exports = function(grunt) {
                     // relative
                     [grunt.util.repeat(fileDepth, '../') + original, grunt.util.repeat(fileDepth, '../') + hashed],
                 ];
+
+                // assets in the same folder as `filepath`
+                if( 0 !== httpFolder.length ) {
+                    // grunt.verbose.writeln('httpFolder :', httpFolder  );
+                    if( 0 === original.indexOf( httpFolder ) ) {
+
+                        replace.push( [original.substring( httpFolder.length), hashed.substring( httpFolder.length)] )
+                    }
+                }
+
                 // find relative paths for shared dirs
                 var originalDirParts = path.dirname(original).split('/');
                 for (var i = 1; i <= fileDepth; i++) {
