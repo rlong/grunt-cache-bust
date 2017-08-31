@@ -91,6 +91,9 @@ module.exports = function(grunt) {
         function replaceInFile(filepath) {
 
             var originalFilepath = filepath;
+
+            // grunt.verbose.writeln('originalFilepath :', originalFilepath );
+
             var markup = grunt.file.read(originalFilepath);
 
             // swizzle windows paths ...
@@ -132,10 +135,11 @@ module.exports = function(grunt) {
                         replace.push( [original.substring( httpFolder.length), hashed.substring( httpFolder.length)] );
                     }
                 }
-                // grunt.verbose.writeln('replace :', replace );
+
 
                 // find relative paths for shared dirs
                 var originalDirParts = path.dirname(original).split('/');
+
                 for (var i = 1; i <= fileDepth; i++) {
                     var fileDir = originalDirParts.slice(0, i).join('/');
                     var baseDir = baseDirs.slice(0, i).join('/');
@@ -153,8 +157,25 @@ module.exports = function(grunt) {
                 _.each(replace, function(r) {
                     var original = r[0];
                     var hashed = r[1];
+                    // grunt.verbose.writeln('original :', original  );
+                    // grunt.verbose.writeln('hashed :', hashed  );
                     _.each(replaceEnclosedBy, function(reb) {
+
                         markup = markup.split(reb[0] + original + reb[1]).join(reb[0] + hashed + reb[1]);
+                        if( '"' == reb[0] && '"' == reb[1] ) {
+
+                            var regex = "\"" + original + "\\?[0-9a-fA-F]+\""; // https://regex101.com/r/brZpaO/1
+                            // grunt.verbose.writeln( regex );
+
+                            markup = markup.split( new RegExp( regex ) ).join(reb[0] + hashed + reb[1]);
+                        }
+                        if( '\'' == reb[0] && '\'' == reb[1] ) {
+
+                            var regex = "'" + original + "\\?[0-9a-fA-F]+'"; // https://regex101.com/r/brZpaO/1
+                            // grunt.verbose.writeln( regex );
+
+                            markup = markup.split( new RegExp( regex ) ).join(reb[0] + hashed + reb[1]);
+                        }
                     });
                 });
             });
